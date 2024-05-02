@@ -111,7 +111,7 @@ export default class Character {
 				const physicsBody = this.character.userData.physicsBody;
 
 				physicsBody.applyCentralImpulse(
-					new this.physics.AmmoApi.btVector3(0, 70, 0)
+					new this.physics.AmmoApi.btVector3(0, 60, 0)
 				);
 			}
 		}

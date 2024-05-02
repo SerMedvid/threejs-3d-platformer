@@ -1,6 +1,7 @@
 "use client";
 
 import { FPSScene } from "@/components/FPSScene";
+import Interface from "@/components/UI";
 import { useEffect, useRef } from "react";
 
 export default function Home() {
@@ -13,6 +14,8 @@ export default function Home() {
 	}, []);
 
 	return (
-		<main className="flex min-h-[100vhs] flex-col items-center justify-between"></main>
+		<main className="flex min-h-[100vhs] flex-col items-center justify-between">
+			<Interface />
+		</main>
 	);
 }
