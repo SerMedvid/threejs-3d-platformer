@@ -2,6 +2,11 @@ import * as THREE from "three";
 import Ammo from "ammojs-typed";
 import Physics from "./Physics";
 
+enum PlatformDirection {
+	VERTICAL = 1,
+	HORIZONTAL = 2,
+}
+
 export default class Environment {
 	scene: THREE.Scene;
 	physics: Physics;
@@ -55,12 +60,24 @@ export default class Environment {
 
 	public updatePlatformPosition(elapsedTime: number) {
 		this.platforms.forEach((platform) => {
+			const direction = platform.userData.direction;
+
 			let translateFactor = this.tmpPos.set(
-				0,
-				Math.sin(elapsedTime * 2 + platform.userData.seed) * 0.01,
+				direction === PlatformDirection.HORIZONTAL
+					? Math.sin(elapsedTime + platform.userData.seed) * 0.02
+					: 0,
+				direction === PlatformDirection.VERTICAL
+					? Math.sin(elapsedTime * 2 + platform.userData.seed) * 0.01
+					: 0,
 				0
 			);
-			platform.translateY(translateFactor.y);
+
+			if (direction === PlatformDirection.HORIZONTAL) {
+				platform.translateX(translateFactor.x);
+			} else {
+				platform.translateY(translateFactor.y);
+			}
+
 			platform.getWorldPosition(this.tmpPos);
 			platform.getWorldQuaternion(this.tmpQuat);
 			let physicsBody = platform.userData.physicsBody;
@@ -110,8 +127,8 @@ export default class Environment {
 	private createPlatform(
 		geometryArgs: typeof THREE.BoxGeometry.arguments,
 		position: THREE.Vector3,
-		shapeArgs: Ammo.btVector3,
-		seed = 0
+		seed = 0,
+		direction = PlatformDirection.VERTICAL
 	) {
 		const platform = new THREE.Mesh(
 			new THREE.BoxGeometry(...geometryArgs),
@@ -122,8 +139,15 @@ export default class Environment {
 		platform.receiveShadow = true;
 		platform.name = "platform";
 		platform.userData.seed = seed;
+		platform.userData.direction = direction;
 
-		let platformShape = new this.physics.AmmoApi.btBoxShape(shapeArgs);
+		let platformShape = new this.physics.AmmoApi.btBoxShape(
+			new this.physics.AmmoApi.btVector3(
+				geometryArgs[0] * 0.5,
+				geometryArgs[1] * 0.5,
+				geometryArgs[2] * 0.5
+			)
+		);
 		platformShape.setMargin(0.05);
 
 		const platformBody = this.physics.createRigidBody(
@@ -134,50 +158,31 @@ export default class Environment {
 			platform.quaternion
 		);
 
+		platformBody.setFriction(
+			direction === PlatformDirection.HORIZONTAL ? 1 : 0.7
+		);
+
 		this.platforms.push(platform);
-		platformBody.setFriction(0.4);
 	}
 
 	private initMovingPlatforms() {
-		this.createPlatform(
-			[3, 0.25, 3],
-			new THREE.Vector3(2, 1, 2),
-			new this.physics.AmmoApi.btVector3(1.5, 0.13, 1.5),
-			5
-		);
+		this.createPlatform([3, 0.25, 3], new THREE.Vector3(2, 1, 2), 5);
+
+		this.createPlatform([4, 0.25, 2], new THREE.Vector3(3, 3, -1));
+
+		this.createPlatform([4, 0.25, 4], new THREE.Vector3(5, 5, 3), 10);
+
+		this.createPlatform([2, 0.25, 3], new THREE.Vector3(8, 3, 7), 12);
+
+		this.createPlatform([4, 0.25, 4], new THREE.Vector3(4, 5, 10), 20);
+
+		this.createPlatform([3, 0.25, 3], new THREE.Vector3(0, 1, 10), 5);
 
 		this.createPlatform(
-			[4, 0.25, 2],
-			new THREE.Vector3(3, 3, -1),
-			new this.physics.AmmoApi.btVector3(2, 0.13, 1)
-		);
-
-		this.createPlatform(
-			[4, 0.25, 4],
-			new THREE.Vector3(5, 5, 3),
-			new this.physics.AmmoApi.btVector3(2, 0.13, 2),
-			10
-		);
-
-		this.createPlatform(
-			[2, 0.25, 3],
-			new THREE.Vector3(8, 3, 7),
-			new this.physics.AmmoApi.btVector3(1, 0.13, 1.5),
-			12
-		);
-
-		this.createPlatform(
-			[4, 0.25, 4],
-			new THREE.Vector3(4, 5, 10),
-			new this.physics.AmmoApi.btVector3(2, 0.13, 2),
-			20
-		);
-
-		this.createPlatform(
-			[3, 0.25, 3],
-			new THREE.Vector3(0, 1, 10),
-			new this.physics.AmmoApi.btVector3(2, 0.13, 2),
-			5
+			[5, 0.25, 3],
+			new THREE.Vector3(2, 2, -3),
+			7,
+			PlatformDirection.HORIZONTAL
 		);
 	}
 
@@ -255,6 +260,4 @@ export default class Environment {
 		this.scene.add(dirLight);
 		this.scene.add(dirLight.target);
 	}
-
-	private initPlatforms() {}
 }
